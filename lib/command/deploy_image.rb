@@ -7,13 +7,14 @@ module Command
     NAME = "deploy-image"
     OPTIONS = [
       app_option(required: true),
+      image_option,  # NEW: Allow specifying an image
       run_release_phase_option
     ].freeze
-    DESCRIPTION = "Deploys the latest image to app workloads, and runs a release script (optional)"
+    DESCRIPTION = "Deploys a specific or latest image to app workloads, and runs a release script (optional)"
     LONG_DESCRIPTION = <<~DESC
-      - Deploys the latest image to app workloads
+      - Deploys the specified image to app workloads (or the latest if not specified)
       - Runs a release script before deploying if `release_script` is specified in the `.controlplane/controlplane.yml` file and `--run-release-phase` is provided
-      - The release script is run in the context of `cpflow run` with the latest image
+      - The release script is run in the context of `cpflow run` with the given image
       - If the release script exits with a non-zero code, the command will stop executing and also exit with a non-zero code
     DESC
 
@@ -22,7 +23,7 @@ module Command
 
       deployed_endpoints = {}
 
-      image = cp.latest_image
+      image = config.options[:image] || cp.latest_image  # NEW: Use provided image if available
       if cp.fetch_image_details(image).nil?
         raise "Image '#{image}' does not exist in the Docker repository on Control Plane " \
               "(see https://console.cpln.io/console/org/#{config.org}/repository/#{config.app}). " \
